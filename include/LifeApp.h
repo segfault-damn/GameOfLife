@@ -15,7 +15,8 @@ public:
     LifeApp();
     ~LifeApp();
     virtual bool OnInit();
-
+private:
+    LifeFrame* frame;
 };
 
 #endif LIFE_APP_H

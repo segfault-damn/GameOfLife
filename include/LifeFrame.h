@@ -20,9 +20,13 @@ public:
 private:
     void OnHello(wxCommandEvent& event);
     void OnExit(wxCommandEvent& event);
+    void OnClose(wxCloseEvent& event);
     void OnAbout(wxCommandEvent& event);
-    void OnRun(wxCommandEvent& event);
+    void OnRun(wxCommandEvent& event); 
+    void OnPause(wxCommandEvent& event);
+    void OnRestart(wxCommandEvent& event);
     void SetGrid();
+    void InitialGame();
     void updateGrid(vector<pair<int, int>> live_cells);
     void OnTimer(wxTimerEvent& event);
     void OnSize(wxSizeEvent& event);
@@ -36,6 +40,8 @@ private:
     static const int ID_Hello = 2;
     static const int ID_Run = 30;
     static const int ID_Timer = 3;
+    static const int ID_Pause = 20;
+    static const int ID_Restart = 10;
 
     vector<int_pair> prev_state_grid_toBe_cleared;
 
