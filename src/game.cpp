@@ -80,7 +80,7 @@ namespace life_game {
 
 	void Game::set_status(int_pair pos, bool status) {
 		this->gamepad[pos] = status;
-		/*
+		
 		if (status) {
 			if (find(live_cells.begin(), live_cells.end(), pos) == live_cells.end())
 				live_cells.push_back(pos);
@@ -89,12 +89,12 @@ namespace life_game {
 			if (find(live_cells.begin(), live_cells.end(), pos) != live_cells.end())
 				live_cells.erase(remove(live_cells.begin(), live_cells.end(), pos), live_cells.end());
 		}
-		*/
+		
 	}
 
 	void Game::set_status(map<int_pair, bool> & gamepad, int_pair pos, bool status) {
 		gamepad[pos] = status;
-		/*
+		
 		if (status) {
 			if (find(live_cells.begin(), live_cells.end(), pos) == live_cells.end())
 				live_cells.push_back(pos);
@@ -103,20 +103,10 @@ namespace life_game {
 			if (find(live_cells.begin(), live_cells.end(), pos) != live_cells.end())
 				live_cells.erase(remove(live_cells.begin(), live_cells.end(), pos), live_cells.end());
 		}
-		*/
+		
 	}
 
 	vector<int_pair> Game::get_live_cells() {
-		vector<int_pair> live_cells;
-		for (int i = 0; i < this->gameWidth; i++) {
-			for (int j = 0; j < this->gameHeight; j++) {
-				int_pair pos(i, j);
-				bool curr_cell_status = this->get_status(pos);
-				if (curr_cell_status) {
-					live_cells.push_back(pos);
-				}
-			}
-		}
 		return live_cells;
 	}
 }

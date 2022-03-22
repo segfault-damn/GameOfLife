@@ -6,8 +6,9 @@ wxBEGIN_EVENT_TABLE(LifeFrame, wxFrame)
     EVT_TIMER(ID_Timer, LifeFrame::OnTimer)
 wxEND_EVENT_TABLE()
 
-LifeFrame::LifeFrame() : wxFrame(NULL, wxID_ANY, "Game of Life") , game(1,1), timer(this, ID_Timer)
+LifeFrame::LifeFrame() : wxFrame(NULL, wxID_ANY, "Game of Life", wxPoint(10,10), wxSize(600,600)) , game(1,1), timer(this, ID_Timer)
 {
+    SetMinSize(wxSize(350, 200));
     wxMenu* menuConfig = new wxMenu;
     menuConfig->Append(ID_SetGrid, "&Grid...\tCtrl-G",
         "Set world size");
@@ -44,7 +45,7 @@ LifeFrame::LifeFrame() : wxFrame(NULL, wxID_ANY, "Game of Life") , game(1,1), ti
     this->grid = new wxGrid(this,
         -1,
         wxPoint(0, 0),
-        wxSize(100, 100));;
+        wxSize(50, 50));;
     SetGrid();
     // ------------- Game -----------------------------
     Game game = Game(rowNum, colNum);
@@ -63,10 +64,14 @@ LifeFrame::LifeFrame() : wxFrame(NULL, wxID_ANY, "Game of Life") , game(1,1), ti
 
 
 LifeFrame::~LifeFrame() {
-
+    if (timer.IsRunning())
+        timer.Stop();
 }
+
 void LifeFrame::OnExit(wxCommandEvent& event)
 {
+    if(timer.IsRunning())
+        timer.Stop();
     Close(true);
 }
 void LifeFrame::OnAbout(wxCommandEvent& event)
@@ -87,8 +92,6 @@ void LifeFrame::OnRun(wxCommandEvent& event)
 void LifeFrame::SetGrid()
 {
     this->grid->CreateGrid(this->rowNum, this->colNum);
-    // We can set the sizes of individual rows and columns
-    // in pixels
     this->grid->HideColLabels();
     this->grid->HideRowLabels();
 
@@ -96,7 +99,7 @@ void LifeFrame::SetGrid()
     int height = size.GetHeight();
     int width = size.GetWidth();
     wxSize fixed_size(width, height);
-    this->grid->SetSize(fixed_size);
+    //this->grid->SetSize(fixed_size);
 
     wxBoxSizer* sizer = new wxBoxSizer(wxVERTICAL);
     sizer->Add(this->grid, 1, wxEXPAND, 0);
@@ -111,7 +114,6 @@ void LifeFrame::SetGrid()
     for (int i = 0; i < grid->GetNumberRows(); i++) {
         this->grid->SetRowSize(i, height / rowNum);
     }
-    grid->SetReadOnly(0, 3);
     Bind(wxEVT_SIZE, &LifeFrame::OnSize, this);
     grid->SetGridLineColour(wxColour(102, 101, 101));
 }
@@ -135,23 +137,24 @@ void LifeFrame::OnSize(wxSizeEvent& event)
 
 void LifeFrame::OnTimer(wxTimerEvent& event)
 {
+    game.update_game();
     vector<pair<int, int>> live_cells;
     live_cells = game.get_live_cells();
     updateGrid(live_cells);
-    game.update_game();
-    wxWindow::Update();
 }
 
 void LifeFrame::updateGrid(vector<pair<int, int>> live_cells)
-{   
-    for (int i = 0; i < grid->GetNumberCols(); i++)
-        for (int j = 0; j < grid->GetNumberRows(); j++)
-            grid->SetCellBackgroundColour(i, j, wxColour("WHITE"));
-   
-    
+{ 
+    for (int i = 0; i < prev_state_grid_toBe_cleared.size(); i++) {
+        pair<int, int> prev_pos = prev_state_grid_toBe_cleared[i];
+        this->grid->SetCellBackgroundColour(prev_pos.first, prev_pos.second, wxColour("WHITE"));
+    }
+    prev_state_grid_toBe_cleared.clear();
+
     for (int i = 0; i < live_cells.size(); i++) {    
         pair<int, int> pos = live_cells[i];
         this->grid->SetCellBackgroundColour(pos.first, pos.second, wxColour(87, 104, 189));
+        prev_state_grid_toBe_cleared.push_back(pos);
     }
     grid->ForceRefresh();
 }

@@ -37,6 +37,8 @@ private:
     static const int ID_Run = 30;
     static const int ID_Timer = 3;
 
+    vector<int_pair> prev_state_grid_toBe_cleared;
+
 };
 
 #endif LIFE_FRAME_H
