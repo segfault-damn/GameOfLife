@@ -25,23 +25,34 @@ private:
     void OnRun(wxCommandEvent& event); 
     void OnPause(wxCommandEvent& event);
     void OnRestart(wxCommandEvent& event);
+    void OnGrid(wxCommandEvent& event);
+    void OnGridEnter(wxCommandEvent& event);
     void SetGrid();
     void InitialGame();
     void updateGrid(vector<pair<int, int>> live_cells);
     void OnTimer(wxTimerEvent& event);
     void OnSize(wxSizeEvent& event);
+
     Game game;
     wxGrid* grid;
+    wxComboBox* gridComboBox;
     wxTimer timer;
     int colNum;
     int rowNum;
-
+ 
+    wxColour backgroundColour;
+    wxColour cellColour;
+    wxColour traceColour;
+    wxColour lineColour;
+    bool trace_mode;
+    bool day_night_mode;
     static const int ID_SetGrid = 1;
     static const int ID_Hello = 2;
     static const int ID_Run = 30;
     static const int ID_Timer = 3;
     static const int ID_Pause = 20;
     static const int ID_Restart = 10;
+    static const int ID_GridComboBox = 15;
 
     vector<int_pair> prev_state_grid_toBe_cleared;
 
