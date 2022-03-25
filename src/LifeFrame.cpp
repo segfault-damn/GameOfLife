@@ -14,6 +14,10 @@ LifeFrame::LifeFrame() : wxFrame(NULL, wxID_ANY, "Game of Life", wxPoint(10,10),
     wxMenu* menuConfig = new wxMenu;
     menuConfig->Append(ID_SetGrid, "&Grid...\tCtrl-G",
         "Set world size");
+    menuConfig->Append(ID_ColourMode, "&Night Mode",
+        "Toggle Day/Night Mode");
+    menuConfig->Append(ID_TraceMode, "&Trace Mode",
+        "Toggle Trace Mode");
 
     wxMenu* menuFile = new wxMenu;
     menuFile->Append(ID_Hello, "&Hello...\tCtrl-H",
@@ -48,25 +52,15 @@ LifeFrame::LifeFrame() : wxFrame(NULL, wxID_ANY, "Game of Life", wxPoint(10,10),
     this->grid = NULL;
     this->trace_mode = 0;
     this->day_night_mode = 1;
-    if (day_night_mode) {
-        this->backgroundColour = wxColour(249, 252, 242);
-        this->cellColour = wxColour(1, 28, 17);
-        this->traceColour = wxColour(182, 219, 218);
-        this->lineColour = wxColour(213, 217, 212);
-    }
-    else {
-        this->backgroundColour = wxColour(249, 252, 242);
-        this->cellColour = wxColour(19, 12, 54);
-        this->traceColour = wxColour(19, 12, 54);
-        this->lineColour = wxColour(249, 252, 242);
-    }
 
     // ------------- Content -------------------------
     // Create a wxGrid object   
 
+    SetColour();
     SetGrid();
-
     InitialGame();
+    InitialGridComboBox();
+    
     Bind(wxEVT_MENU, &LifeFrame::OnHello, this, ID_Hello);
     Bind(wxEVT_MENU, &LifeFrame::OnAbout, this, wxID_ABOUT);
     Bind(wxEVT_MENU, &LifeFrame::OnExit, this, wxID_EXIT);
@@ -74,12 +68,15 @@ LifeFrame::LifeFrame() : wxFrame(NULL, wxID_ANY, "Game of Life", wxPoint(10,10),
     Bind(wxEVT_MENU, &LifeFrame::OnRun, this, ID_Run);
     Bind(wxEVT_MENU, &LifeFrame::OnPause, this, ID_Pause);
     Bind(wxEVT_MENU, &LifeFrame::OnRestart, this, ID_Restart);
+    Bind(wxEVT_MENU, &LifeFrame::OnColourMode, this, ID_ColourMode);
+    Bind(wxEVT_MENU, &LifeFrame::OnTraceMode, this, ID_TraceMode);
 }
 
 LifeFrame::~LifeFrame() {
     this->prev_state_grid_toBe_cleared.clear();
     delete this->grid;
-    delete this->gridComboBox;
+    if (this->gridComboBox != NULL) 
+        delete this->gridComboBox;
 }
 
 void LifeFrame::InitialGame() {
@@ -93,6 +90,13 @@ void LifeFrame::InitialGame() {
 
     vector<pair<int, int>> live_cells = this->game.get_live_cells();
     updateGrid(live_cells);
+}
+
+void LifeFrame::InitialGridComboBox() {
+    static const wxString choiceArray[5] =
+    { "Ultra Small (5x5)", "Small (15x15)", "Middle (30x30)", "Large (70x50)", "Ultra Large (120x70)" };
+    this->gridComboBox = new wxComboBox(this, ID_GridComboBox, "", wxPoint(30, 30), wxSize(100, 100), 5, choiceArray);
+    this->gridComboBox->Hide();
 }
 
 void LifeFrame::OnExit(wxCommandEvent& event)
@@ -122,9 +126,6 @@ void LifeFrame::OnHello(wxCommandEvent& event)
 
 void LifeFrame::OnGrid(wxCommandEvent& event)
 {
-    static const wxString choiceArray[5] =
-    { "Ultra Small (5x5)", "Small (15x15)", "Middle (30x30)", "Large (70x50)", "Ultra Large (120x70)" };
-    this->gridComboBox = new wxComboBox(this, ID_GridComboBox, "", wxPoint(30, 30), wxSize(100, 100), 5, choiceArray);
     this->gridComboBox->Popup();
 }
 
@@ -135,7 +136,6 @@ void LifeFrame::OnRun(wxCommandEvent& event)
 
 void LifeFrame::OnGridEnter(wxCommandEvent& event)
 {
-
     int comboValue = this->gridComboBox->GetSelection();
     switch (comboValue) {
         case 0:
@@ -164,9 +164,31 @@ void LifeFrame::OnGridEnter(wxCommandEvent& event)
             this->SetClientSize(2000,2000);
             break;
     }
+    if(timer.IsRunning())
+        timer.Stop();
+    prev_state_grid_toBe_cleared.clear();
     SetGrid();
-    this->gridComboBox->Hide();   
     InitialGame();
+    this->gridComboBox->Hide();   
+}
+
+void LifeFrame::OnColourMode(wxCommandEvent& event)
+{
+    if (this->day_night_mode) {
+        //Day->Night
+        this->day_night_mode = 0;
+    }
+    else {
+        //Night->Day
+        this->day_night_mode = 1;
+    }
+    SetColour();
+    SetGrid();
+}
+
+void LifeFrame::OnTraceMode(wxCommandEvent& event)
+{
+    this->trace_mode = !this->trace_mode;
 }
 
 void LifeFrame::OnRestart(wxCommandEvent& event)
@@ -180,46 +202,6 @@ void LifeFrame::OnRestart(wxCommandEvent& event)
 void LifeFrame::OnPause(wxCommandEvent& event)
 {
     timer.Stop();
-}
-
-void LifeFrame::SetGrid()
-{
-    wxSize size = this->GetClientSize();
-    if (this->grid != NULL)
-        delete grid;
-    this->grid = new wxGrid(this,
-        -1,
-        wxPoint(0, 0),
-        size);
-    this->grid->CreateGrid(this->rowNum, this->colNum);
-    this->grid->HideColLabels();
-    this->grid->HideRowLabels();
-
-    wxBoxSizer* sizer = new wxBoxSizer(wxVERTICAL);
-    sizer->Add(this->grid, 1, wxEXPAND, 0);
-    SetSizer(sizer);
-    sizer->Fit(this);
-
-    for (int i = 0; i < grid->GetNumberCols(); i++) {        
-        for (int j = 0; j < grid->GetNumberRows(); j++) {
-            this->grid->SetReadOnly(j, i);  
-            this->grid->SetCellBackgroundColour(j, i, this->backgroundColour);
-        }
-    }
-  
-    int height = size.GetHeight();
-    int width = size.GetWidth();
-    for (int i = 0; i < grid->GetNumberCols(); i++) {
-        this->grid->SetColSize(i, width / colNum);
-        this->grid->DisableColResize(i);
-    }
-    for (int i = 0; i < grid->GetNumberRows(); i++) {
-        this->grid->SetRowSize(i, height / rowNum);
-        this->grid->DisableRowResize(i);
-    }
-
-    Bind(wxEVT_SIZE, &LifeFrame::OnSize, this);
-    this->grid->SetGridLineColour(lineColour);
 }
 
 void LifeFrame::OnSize(wxSizeEvent& event)
@@ -243,6 +225,63 @@ void LifeFrame::OnTimer(wxTimerEvent& event)
     game.update_game();
     vector<pair<int, int>> live_cells = game.get_live_cells();
     updateGrid(live_cells);
+}
+
+
+void LifeFrame::SetGrid()
+{
+    wxSize size = this->GetClientSize();
+    if (this->grid != NULL)
+        delete grid;
+    this->grid = new wxGrid(this,
+        -1,
+        wxPoint(0, 0),
+        size);
+    this->grid->CreateGrid(this->rowNum, this->colNum);
+    this->grid->HideColLabels();
+    this->grid->HideRowLabels();
+
+    wxBoxSizer* sizer = new wxBoxSizer(wxVERTICAL);
+    sizer->Add(this->grid, 1, wxEXPAND, 0);
+    SetSizer(sizer);
+    sizer->Fit(this);
+
+    for (int i = 0; i < grid->GetNumberCols(); i++) {
+        for (int j = 0; j < grid->GetNumberRows(); j++) {
+            this->grid->SetReadOnly(j, i);
+            this->grid->SetCellBackgroundColour(j, i, this->backgroundColour);
+        }
+    }
+
+    int height = size.GetHeight();
+    int width = size.GetWidth();
+    for (int i = 0; i < grid->GetNumberCols(); i++) {
+        this->grid->SetColSize(i, width / colNum);
+        this->grid->DisableColResize(i);
+    }
+    for (int i = 0; i < grid->GetNumberRows(); i++) {
+        this->grid->SetRowSize(i, height / rowNum);
+        this->grid->DisableRowResize(i);
+    }
+
+    Bind(wxEVT_SIZE, &LifeFrame::OnSize, this);
+    this->grid->SetGridLineColour(lineColour);
+}
+
+void LifeFrame::SetColour()
+{
+    if (this->day_night_mode) {
+        this->backgroundColour = wxColour(249, 252, 242);
+        this->cellColour = wxColour(1, 28, 17);
+        this->traceColour = wxColour(182, 219, 218);
+        this->lineColour = wxColour(213, 217, 212);
+    }
+    else {
+        this->backgroundColour = wxColour(0, 15, 9);
+        this->cellColour = wxColour(223, 242, 233);
+        this->traceColour = wxColour(138, 158, 148);
+        this->lineColour = wxColour(77, 79, 78);
+    }
 }
 
 void LifeFrame::updateGrid(vector<pair<int, int>> live_cells)

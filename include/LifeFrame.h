@@ -27,11 +27,15 @@ private:
     void OnRestart(wxCommandEvent& event);
     void OnGrid(wxCommandEvent& event);
     void OnGridEnter(wxCommandEvent& event);
-    void SetGrid();
-    void InitialGame();
-    void updateGrid(vector<pair<int, int>> live_cells);
     void OnTimer(wxTimerEvent& event);
     void OnSize(wxSizeEvent& event);
+    void OnColourMode(wxCommandEvent& event);
+    void OnTraceMode(wxCommandEvent& event);
+    void SetGrid();
+    void SetColour();
+    void InitialGame();
+    void InitialGridComboBox();
+    void updateGrid(vector<pair<int, int>> live_cells);
 
     Game game;
     wxGrid* grid;
@@ -53,7 +57,8 @@ private:
     static const int ID_Pause = 20;
     static const int ID_Restart = 10;
     static const int ID_GridComboBox = 15;
-
+    static const int ID_ColourMode = 14;
+    static const int ID_TraceMode = 13;
     vector<int_pair> prev_state_grid_toBe_cleared;
 
 };
