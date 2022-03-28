@@ -13,25 +13,31 @@ LifeFrame::LifeFrame() : wxFrame(NULL, wxID_ANY, "Game of Life", wxPoint(10,10),
     menuGrid->Append(ID_GRID_M, "Medium (30x30)");
     menuGrid->Append(ID_GRID_L, "Large (50x40)");
     menuGrid->Append(ID_GRID_UL, "Ultra Large (70x50)");
-    wxMenu* menuConfig = new wxMenu;
+
+    wxMenu* menuSpeed = new wxMenu;
+    menuSpeed->AppendRadioItem(ID_Speed + 1, "Very Slow (2s)");
+    menuSpeed->AppendRadioItem(ID_Speed + 2, "Slow (1s)");
+    menuSpeed->AppendRadioItem(ID_Speed + 3, "Medium (0.3s)");
+    menuSpeed->AppendRadioItem(ID_Speed + 4, "Fast (0.08s)");
+    menuSpeed->AppendRadioItem(ID_Speed + 5, "Very Fast (0.04s) [HIGH CPU REQUIREMENT]");
+    menuSpeed->Check(ID_Speed + 3, true);
+
+    this->menuConfig = new wxMenu;
     menuConfig->AppendSubMenu(menuGrid, "&Grid",
-        "Set world size");
+        "Set world size...");
     menuConfig->Append(ID_SetGame, "&Cell",
-        "Choose live cells to start!");
+        "Choose live cells to start...");
+    menuConfig->AppendSubMenu(menuSpeed , "&Refresh Rate",
+        "Choose the speed of the game...");
     menuConfig->AppendSeparator();
     menuConfig->AppendCheckItem(ID_ColourMode, "&Night Mode",
         "Toggle Day/Night Mode");
     menuConfig->AppendCheckItem(ID_TraceMode, "&Trace Mode",
         "Toggle Trace Mode");
     menuConfig->AppendCheckItem(ID_FullScreen, "&Full Screen",
-        "Toggle Full Screen");
+        "Toggle Full Screen");   
 
-    wxMenu* menuFile = new wxMenu;
-    menuFile->Append(ID_Hello, "&Hello...\tCtrl-H",
-        "Help string shown in status bar for this menu item");
-   
-
-    wxMenu* menuRun = new wxMenu;
+    this->menuRun = new wxMenu;
     menuRun->Append(ID_Run, "&Run\tCtrl-R",
         "Start the game!");
     menuRun->Append(ID_Pause, "&Pause\tCtrl-P",
@@ -41,19 +47,17 @@ LifeFrame::LifeFrame() : wxFrame(NULL, wxID_ANY, "Game of Life", wxPoint(10,10),
     menuRun->AppendSeparator();
     menuRun->Append(wxID_EXIT);
 
-    wxMenu* menuHelp = new wxMenu;
+    this->menuHelp = new wxMenu;
     menuHelp->Append(wxID_ABOUT);
 
     menuBar = new wxMenuBar;
     menuBar->Append(menuRun, "&Game");
     menuBar->Append(menuConfig, "&Config");
-    menuBar->Append(menuFile, "&File");
     menuBar->Append(menuHelp, "&Help");
     SetMenuBar(menuBar);
 
     CreateStatusBar();
     SetStatusText("Thanks to Conway!");
-
 
     this->rowNum = 15;
     this->colNum = 15;
@@ -61,10 +65,6 @@ LifeFrame::LifeFrame() : wxFrame(NULL, wxID_ANY, "Game of Life", wxPoint(10,10),
     this->btn = NULL;
     this->grid_sizer = new wxBoxSizer(wxVERTICAL);
     this->button_grid_sizer = NULL;
-    this->trace_mode = 0;
-    this->day_night_mode = 1;
-    this->full_screen_mode = 0;
-    this->grid_size_mode = 2;
 
     // ------------- Content -------------------------
     // Create a wxGrid object   
@@ -74,7 +74,6 @@ LifeFrame::LifeFrame() : wxFrame(NULL, wxID_ANY, "Game of Life", wxPoint(10,10),
     InitialGame();
     InitialBtn();
     
-    Bind(wxEVT_MENU, &LifeFrame::OnHello, this, ID_Hello);
     Bind(wxEVT_MENU, &LifeFrame::OnAbout, this, wxID_ABOUT);
     Bind(wxEVT_MENU, &LifeFrame::OnExit, this, wxID_EXIT);
     Bind(wxEVT_MENU, &LifeFrame::OnRun, this, ID_Run);
@@ -89,6 +88,9 @@ LifeFrame::LifeFrame() : wxFrame(NULL, wxID_ANY, "Game of Life", wxPoint(10,10),
     Bind(wxEVT_MENU, &LifeFrame::OnGridL, this, ID_GRID_L);
     Bind(wxEVT_MENU, &LifeFrame::OnGridUL, this, ID_GRID_UL);
     Bind(wxEVT_MENU, &LifeFrame::OnCell, this, ID_SetGame);
+    for (int i = 1; i <= 5; i++) {
+        Bind(wxEVT_MENU, &LifeFrame::OnSpeed, this, ID_Speed + i);
+    }
 }
 
 LifeFrame::~LifeFrame() {
@@ -176,17 +178,44 @@ void LifeFrame::OnClose(wxCloseEvent& event)
 
 void LifeFrame::OnAbout(wxCommandEvent& event)
 {
-    wxMessageBox("This is a wxWidgets Hello World example",
-        "About Hello World", wxOK | wxICON_INFORMATION);
-}
-void LifeFrame::OnHello(wxCommandEvent& event)
-{
-    wxLogMessage("Hello world from wxWidgets!");
+    wxAboutDialogInfo info;
+    info.SetWebSite("https://en.wikipedia.org/wiki/Conway%27s_Game_of_Life");
+    info.SetVersion(this->version);
+    info.SetDescription(_("Click 'Config->Cell' to set the game!"));
+    info.AddDeveloper("Daisy");
+    info.AddDeveloper("Laisen");
+    info.SetName("Game Of Life");
+    wxAboutBox(info, this);
 }
 
 void LifeFrame::OnRun(wxCommandEvent& event)
 {
-    timer.Start(50);
+    timer.Start(this->speed_mode);
+}
+
+void LifeFrame::OnSpeed(wxCommandEvent& event) {
+    int speed_mode_ID = event.GetId() - ID_Speed;
+    switch (speed_mode_ID) {
+        case 1:
+            this->speed_mode = 2000;
+            break;
+        case 2:
+            this->speed_mode = 1000;
+            break;
+        case 3:
+            this->speed_mode = 300;
+            break;
+        case 4:
+            this->speed_mode = 80;
+            break;
+        case 5:
+            this->speed_mode = 40;
+            break;
+    }
+    if (timer.IsRunning()) {
+        timer.Stop();
+        timer.Start(this->speed_mode);
+    }
 }
 
 void LifeFrame::OnGridUS(wxCommandEvent& event) {
@@ -305,7 +334,26 @@ void LifeFrame::OnRestart(wxCommandEvent& event)
 
 void LifeFrame::OnPause(wxCommandEvent& event)
 {
-    timer.Stop();
+    if (!timer.IsRunning()) {
+        wxMessageBox("Please start the game before trying to pause!",
+            "Error", wxOK | wxICON_INFORMATION);
+    }
+    else {
+        timer.Stop();
+        menuRun->Delete(ID_Pause);
+        menuRun->Insert(1, ID_Resume, "&Resume\tCtrl-P",
+            "Resume the game!");
+        Bind(wxEVT_MENU, &LifeFrame::OnResume, this, ID_Resume);
+    }
+}
+
+void LifeFrame::OnResume(wxCommandEvent& event)
+{
+    timer.Start(this->speed_mode);
+    menuRun->Delete(ID_Resume);
+    menuRun->Insert(1, ID_Pause, "&Pause\tCtrl-P",
+        "Pause the game!");
+    Bind(wxEVT_MENU, &LifeFrame::OnPause, this, ID_Pause);
 }
 
 void LifeFrame::OnSize(wxSizeEvent& event)
@@ -347,6 +395,9 @@ void LifeFrame::OnCell(wxCommandEvent& event)
         }
         this->SetSizer(this->button_grid_sizer, false);
         Layout();
+        menuBar->Remove(0);
+        menuBar->Remove(0);
+        menuBar->Remove(0);
         wxMenu* menuConfirm = new wxMenu;
         menuConfirm->Append(ID_GRID_BTN_CFM, "Confirm");
         menuBar->Append(menuConfirm, "Finish");
@@ -358,7 +409,7 @@ void LifeFrame::OnCell(wxCommandEvent& event)
 void LifeFrame::OnConfirm(wxCommandEvent& event)
 {
     this->initial_live_cells = this->game.get_live_cells();
-    menuBar->Remove(4);
+    menuBar->Remove(0);
     for (int i = 0; i < rowNum; i++) {
         for (int j = 0; j < colNum; j++) {
             btn[i * colNum + j]->Hide();
@@ -369,6 +420,9 @@ void LifeFrame::OnConfirm(wxCommandEvent& event)
     button_grid_sizer = NULL;
     updateGrid();
     Layout();
+    menuBar->Append(menuRun, "&Game");
+    menuBar->Append(menuConfig, "&Config");
+    menuBar->Append(menuHelp, "&Help");
 }
 
 void LifeFrame::SetGrid()
