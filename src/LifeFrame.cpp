@@ -7,6 +7,9 @@ wxEND_EVENT_TABLE()
 
 LifeFrame::LifeFrame() : wxFrame(NULL, wxID_ANY, "Game of Life", wxPoint(10,10), wxSize(600,600)) , game(1,1), timer(this, ID_Timer)
 {
+    wxIcon* icon = new wxIcon(iconbitmap);
+    this->SetIcon(*icon);
+
     wxMenu* menuGrid = new wxMenu;
     menuGrid->Append(ID_GRID_US, "Ultra Small (5x5)");
     menuGrid->Append(ID_GRID_S, "Small (15x15)");
@@ -302,6 +305,11 @@ void LifeFrame::OnColourMode(wxCommandEvent& event)
             btn[i * colNum + j]->SetBackgroundColour(this->backgroundColour);
         }
     }
+
+    for (int i = 0; i < initial_live_cells.size(); i++) {
+        int_pair pos = initial_live_cells[i];
+        btn[pos.first * colNum + pos.second]->SetBackgroundColour(this->cellColour);
+    }
 }
 
 void LifeFrame::OnFullScreen(wxCommandEvent& event)
@@ -399,9 +407,11 @@ void LifeFrame::OnCell(wxCommandEvent& event)
         menuBar->Remove(0);
         menuBar->Remove(0);
         wxMenu* menuConfirm = new wxMenu;
-        menuConfirm->Append(ID_GRID_BTN_CFM, "Confirm");
-        menuBar->Append(menuConfirm, "Finish");
+        menuConfirm->Append(ID_GRID_BTN_CLEAR, "Clear");
+        menuConfirm->Append(ID_GRID_BTN_CFM, "Finish");
+        menuBar->Append(menuConfirm, "Actions");
         Bind(wxEVT_MENU, &LifeFrame::OnConfirm, this, ID_GRID_BTN_CFM);
+        Bind(wxEVT_MENU, &LifeFrame::OnClear, this, ID_GRID_BTN_CLEAR);
         InitialGame();
     }
 }
@@ -423,6 +433,23 @@ void LifeFrame::OnConfirm(wxCommandEvent& event)
     menuBar->Append(menuRun, "&Game");
     menuBar->Append(menuConfig, "&Config");
     menuBar->Append(menuHelp, "&Help");
+}
+
+void LifeFrame::OnClear(wxCommandEvent& event)
+{
+    prev_state_grid_toBe_cleared.clear();
+    for (int i = 0; i < rowNum; i++) {
+        for (int j = 0; j < colNum; j++) {
+            btn[i * colNum + j]->SetBackgroundColour(this->backgroundColour);
+        }
+    } 
+    initial_live_cells.clear();
+    InitialGame();
+    for (int i = 0; i < grid->GetNumberCols(); i++) {
+        for (int j = 0; j < grid->GetNumberRows(); j++) {
+            this->grid->SetCellBackgroundColour(j, i, this->backgroundColour);
+        }
+    }
 }
 
 void LifeFrame::SetGrid()

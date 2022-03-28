@@ -8,6 +8,7 @@
 #include <wx/timer.h>
 #include <wx/grid.h>
 #include <wx/aboutdlg.h>
+#include "iconbitmap.xpm"
 
 using namespace life_game;
 
@@ -39,6 +40,7 @@ private:
     void OnCell(wxCommandEvent& event);    
     void OnButtonClicked(wxCommandEvent& event);
     void OnConfirm(wxCommandEvent& event);
+    void OnClear(wxCommandEvent& event);
     void GridSizeEnter();
     void SetGrid();
     void SetColour();
@@ -86,12 +88,13 @@ private:
     static const int ID_GRID_UL = 44;
     static const int ID_SetGame = 50;
     static const int ID_GRID_BTN_CFM = 100;
+    static const int ID_GRID_BTN_CLEAR = 101;
     static const int ID_Speed = 500;
     vector<int_pair> prev_state_grid_toBe_cleared; 
     vector<int_pair> initial_live_cells;
     wxButton ** btn;
 
-    wxString version = "1.0";
+    wxString version = "1.1";
 };
 
 #endif LIFE_FRAME_H
