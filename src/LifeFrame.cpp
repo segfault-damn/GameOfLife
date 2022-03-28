@@ -58,7 +58,8 @@ LifeFrame::LifeFrame() : wxFrame(NULL, wxID_ANY, "Game of Life", wxPoint(10,10),
     menuBar->Append(menuConfig, "&Config");
     menuBar->Append(menuHelp, "&Help");
     SetMenuBar(menuBar);
-
+    this->SetColour();
+    this->SetBackgroundColour(this->btnBackColour);
     CreateStatusBar();
     SetStatusText("Thanks to Conway!");
 
@@ -298,7 +299,7 @@ void LifeFrame::OnColourMode(wxCommandEvent& event)
     SetColour();
     SetGrid();
     updateGrid();
-
+    this->SetBackgroundColour(this->btnBackColour);
     // update btn colour
     for (int i = 0; i < rowNum; i++) {
         for (int j = 0; j < colNum; j++) {
@@ -496,14 +497,16 @@ void LifeFrame::SetColour()
     if (this->day_night_mode) {
         this->backgroundColour = wxColour(249, 252, 242);
         this->cellColour = wxColour(1, 28, 17);
-        this->traceColour = wxColour(182, 219, 218);
+        this->traceColour = wxColour(189, 209, 178);
         this->lineColour = wxColour(213, 217, 212);
+        this->btnBackColour = wxColour(218, 224, 215);
     }
     else {
         this->backgroundColour = wxColour(0, 15, 9);
         this->cellColour = wxColour(223, 242, 233);
         this->traceColour = wxColour(42, 46, 44);
         this->lineColour = wxColour(77, 79, 78);
+        this->btnBackColour = wxColour(8, 36, 69);
     }
 }
 

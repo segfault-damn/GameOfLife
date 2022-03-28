@@ -59,6 +59,7 @@ private:
     wxColour cellColour;
     wxColour traceColour;
     wxColour lineColour;
+    wxColour btnBackColour;
     bool trace_mode = 0;
     bool day_night_mode = 1;
     bool full_screen_mode = 0;
