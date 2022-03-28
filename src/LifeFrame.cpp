@@ -11,11 +11,11 @@ LifeFrame::LifeFrame() : wxFrame(NULL, wxID_ANY, "Game of Life", wxPoint(10,10),
     this->SetIcon(*icon);
 
     wxMenu* menuGrid = new wxMenu;
-    menuGrid->Append(ID_GRID_US, "Ultra Small (5x5)");
-    menuGrid->Append(ID_GRID_S, "Small (15x15)");
-    menuGrid->Append(ID_GRID_M, "Medium (30x30)");
-    menuGrid->Append(ID_GRID_L, "Large (50x40)");
-    menuGrid->Append(ID_GRID_UL, "Ultra Large (70x50)");
+    menuGrid->Append(ID_GRID + 1, "Ultra Small (5x5)");
+    menuGrid->Append(ID_GRID + 2, "Small (15x15)");
+    menuGrid->Append(ID_GRID + 3, "Medium (30x30)");
+    menuGrid->Append(ID_GRID + 4, "Large (50x40)");
+    menuGrid->Append(ID_GRID + 5, "Ultra Large (70x50)");
 
     wxMenu* menuSpeed = new wxMenu;
     menuSpeed->AppendRadioItem(ID_Speed + 1, "Very Slow (2s)");
@@ -40,6 +40,13 @@ LifeFrame::LifeFrame() : wxFrame(NULL, wxID_ANY, "Game of Life", wxPoint(10,10),
     menuConfig->AppendCheckItem(ID_FullScreen, "&Full Screen",
         "Toggle Full Screen");   
 
+    wxMenu* menuExample = new wxMenu;
+    menuExample->Append(ID_Example + 1, "Blinker (15x15)");
+    menuExample->Append(ID_Example + 2, "Glider (15x15)");
+    menuExample->Append(ID_Example + 3, "MWSS (50x40)");
+    menuExample->Append(ID_Example + 4, "Penta-decathlon (50x40)");
+    menuExample->Append(ID_Example + 5, "Pulsar (70x50)");
+
     this->menuRun = new wxMenu;
     menuRun->Append(ID_Run, "&Run\tCtrl-R",
         "Start the game!");
@@ -47,6 +54,9 @@ LifeFrame::LifeFrame() : wxFrame(NULL, wxID_ANY, "Game of Life", wxPoint(10,10),
         "Pause the game!");
     menuRun->Append(ID_Restart, "&Restart",
         "Restart the game!");
+    menuRun->AppendSeparator();
+    menuRun->AppendSubMenu(menuExample, "&Examples",
+        "Some cool examples!");
     menuRun->AppendSeparator();
     menuRun->Append(wxID_EXIT);
 
@@ -63,17 +73,10 @@ LifeFrame::LifeFrame() : wxFrame(NULL, wxID_ANY, "Game of Life", wxPoint(10,10),
     CreateStatusBar();
     SetStatusText("Thanks to Conway!");
 
-    this->rowNum = 15;
-    this->colNum = 15;
-    this->grid = NULL;
-    this->btn = NULL;
     this->grid_sizer = new wxBoxSizer(wxVERTICAL);
-    this->button_grid_sizer = NULL;
 
     // ------------- Content -------------------------
     // Create a wxGrid object   
-
-    SetColour();
     SetGrid();
     InitialGame();
     InitialBtn();
@@ -86,14 +89,11 @@ LifeFrame::LifeFrame() : wxFrame(NULL, wxID_ANY, "Game of Life", wxPoint(10,10),
     Bind(wxEVT_MENU, &LifeFrame::OnColourMode, this, ID_ColourMode);
     Bind(wxEVT_MENU, &LifeFrame::OnTraceMode, this, ID_TraceMode);
     Bind(wxEVT_MENU, &LifeFrame::OnFullScreen, this, ID_FullScreen);
-    Bind(wxEVT_MENU, &LifeFrame::OnGridUS, this, ID_GRID_US);
-    Bind(wxEVT_MENU, &LifeFrame::OnGridS, this, ID_GRID_S);
-    Bind(wxEVT_MENU, &LifeFrame::OnGridM, this, ID_GRID_M);
-    Bind(wxEVT_MENU, &LifeFrame::OnGridL, this, ID_GRID_L);
-    Bind(wxEVT_MENU, &LifeFrame::OnGridUL, this, ID_GRID_UL);
     Bind(wxEVT_MENU, &LifeFrame::OnCell, this, ID_SetGame);
     for (int i = 1; i <= 5; i++) {
         Bind(wxEVT_MENU, &LifeFrame::OnSpeed, this, ID_Speed + i);
+        Bind(wxEVT_MENU, &LifeFrame::OnExample, this, ID_Example + i);
+        Bind(wxEVT_MENU, &LifeFrame::OnGrid, this, ID_GRID + i);
     }
 }
 
@@ -111,6 +111,7 @@ LifeFrame::~LifeFrame() {
     DeleteBtn();
 }
 
+// set the game with given cells in the initiali_live_cells
 void LifeFrame::InitialGame() {
     Game game = Game(rowNum, colNum);
     this->game = game;
@@ -118,15 +119,10 @@ void LifeFrame::InitialGame() {
         int_pair pos = initial_live_cells[i];
         this->game.set_status(pos, true);
     }
- //   this->game.set_status(make_pair(5, 5), true);
- //   this->game.set_status(make_pair(6, 6), true);
- //   this->game.set_status(make_pair(7, 6), true);
-  //  this->game.set_status(make_pair(7, 5), true);
-  //  this->game.set_status(make_pair(7, 4), true);
-
     updateGrid();
 }
 
+// initialize new buttons
 void LifeFrame::InitialBtn() {
     btn = new wxButton*[rowNum * colNum];
     for (int i = 0; i < rowNum; i++) {
@@ -195,6 +191,7 @@ void LifeFrame::OnAbout(wxCommandEvent& event)
 void LifeFrame::OnRun(wxCommandEvent& event)
 {
     timer.Start(this->speed_mode);
+    menuRun->Delete(ID_Run);
 }
 
 void LifeFrame::OnSpeed(wxCommandEvent& event) {
@@ -222,75 +219,10 @@ void LifeFrame::OnSpeed(wxCommandEvent& event) {
     }
 }
 
-void LifeFrame::OnGridUS(wxCommandEvent& event) {
-    if (this->grid_size_mode != 1) {
-        this->grid_size_mode = 1;
-        GridSizeEnter();
-    }
-}
-
-void LifeFrame::OnGridS(wxCommandEvent& event) {
-    if (this->grid_size_mode != 2) {
-        this->grid_size_mode = 2;
-        GridSizeEnter();
-    }
-}
-
-void LifeFrame::OnGridM(wxCommandEvent& event) {
-    if (this->grid_size_mode != 3) {
-        this->grid_size_mode = 3;
-        GridSizeEnter();
-    }
-}
-
-void LifeFrame::OnGridL(wxCommandEvent& event) {
-    if (this->grid_size_mode != 4) {
-        this->grid_size_mode = 4;
-        GridSizeEnter();
-    }
-}
-
-void LifeFrame::OnGridUL(wxCommandEvent& event) {
-    if (this->grid_size_mode != 5) {
-        this->grid_size_mode = 5;
-        GridSizeEnter();
-    }
-}
-
-void LifeFrame::GridSizeEnter()
-{
-    DeleteBtn();
-    switch (this->grid_size_mode) {
-        case 1:
-            this->rowNum = 5;
-            this->colNum = 5;
-            break;
-        case 2:
-            this->rowNum = 15;
-            this->colNum = 15;
-            break;
-        case 3:
-            this->rowNum = 30;
-            this->colNum = 30;
-            break;
-        case 4:
-            this->rowNum = 40;
-            this->colNum = 50;
-            this->SetClientSize(1000, 800);
-            break;
-        case 5:
-            this->rowNum = 50;
-            this->colNum = 70;
-            this->SetClientSize(1400, 1000);
-            break;
-    }
-    if(timer.IsRunning())
-        timer.Stop();
-    prev_state_grid_toBe_cleared.clear();
-    initial_live_cells.clear();
-    SetGrid();
-    InitialGame();
-    InitialBtn();
+void LifeFrame::OnGrid(wxCommandEvent& event) {
+    int grid_ID = event.GetId() - ID_GRID;
+    GridSizeEnter(grid_ID);
+    this->grid_size_mode = grid_ID;
 }
 
 void LifeFrame::OnColourMode(wxCommandEvent& event)
@@ -300,30 +232,20 @@ void LifeFrame::OnColourMode(wxCommandEvent& event)
     SetGrid();
     updateGrid();
     this->SetBackgroundColour(this->btnBackColour);
-    // update btn colour
-    for (int i = 0; i < rowNum; i++) {
-        for (int j = 0; j < colNum; j++) {
-            btn[i * colNum + j]->SetBackgroundColour(this->backgroundColour);
-        }
-    }
-
-    for (int i = 0; i < initial_live_cells.size(); i++) {
-        int_pair pos = initial_live_cells[i];
-        btn[pos.first * colNum + pos.second]->SetBackgroundColour(this->cellColour);
-    }
+    updateBtn();
 }
 
 void LifeFrame::OnFullScreen(wxCommandEvent& event)
 {
     if (this->full_screen_mode) {
        
-        this->ShowFullScreen(false, wxFULLSCREEN_NOCAPTION);
+        this->ShowFullScreen(false, wxMAXIMIZE);
     }
     else {
         long styleflag = GetWindowStyle();
-        SetWindowStyle(styleflag | wxSTAY_ON_TOP);
+        SetWindowStyle(styleflag | wxSTAY_ON_TOP | wxMAXIMIZE);
 
-        this->ShowFullScreen(true, wxFULLSCREEN_NOCAPTION);
+        this->ShowFullScreen(true, wxMAXIMIZE);
     }
     this->full_screen_mode = !this->full_screen_mode;
 }
@@ -335,10 +257,17 @@ void LifeFrame::OnTraceMode(wxCommandEvent& event)
 
 void LifeFrame::OnRestart(wxCommandEvent& event)
 {
+    if (!timer.IsRunning()) {
+        menuRun->Delete(ID_Resume);
+        menuRun->Insert(0, ID_Pause, "&Pause\tCtrl-P",
+            "Pause the game!");
+    }
+    menuRun->Insert(0, ID_Run, "&Run\tCtrl-R",
+        "Start the game!");
     timer.Stop();
     prev_state_grid_toBe_cleared.clear();
     SetGrid();
-    InitialGame();
+    InitialGame(); 
 }
 
 void LifeFrame::OnPause(wxCommandEvent& event)
@@ -350,7 +279,7 @@ void LifeFrame::OnPause(wxCommandEvent& event)
     else {
         timer.Stop();
         menuRun->Delete(ID_Pause);
-        menuRun->Insert(1, ID_Resume, "&Resume\tCtrl-P",
+        menuRun->Insert(0, ID_Resume, "&Resume\tCtrl-P",
             "Resume the game!");
         Bind(wxEVT_MENU, &LifeFrame::OnResume, this, ID_Resume);
     }
@@ -360,7 +289,7 @@ void LifeFrame::OnResume(wxCommandEvent& event)
 {
     timer.Start(this->speed_mode);
     menuRun->Delete(ID_Resume);
-    menuRun->Insert(1, ID_Pause, "&Pause\tCtrl-P",
+    menuRun->Insert(0, ID_Pause, "&Pause\tCtrl-P",
         "Pause the game!");
     Bind(wxEVT_MENU, &LifeFrame::OnPause, this, ID_Pause);
 }
@@ -438,21 +367,95 @@ void LifeFrame::OnConfirm(wxCommandEvent& event)
 
 void LifeFrame::OnClear(wxCommandEvent& event)
 {
-    prev_state_grid_toBe_cleared.clear();
-    for (int i = 0; i < rowNum; i++) {
-        for (int j = 0; j < colNum; j++) {
-            btn[i * colNum + j]->SetBackgroundColour(this->backgroundColour);
+    clearGame();
+}
+
+void LifeFrame::OnExample(wxCommandEvent& event)
+{
+    clearGame();
+    if (timer.IsRunning()) {
+        wxMessageBox("The program is currently running. Click 'Restart' to reset the game!",
+            "Error", wxOK | wxICON_INFORMATION);
+    }
+    else {
+        int example_ID = event.GetId() - ID_Example;
+        switch (example_ID) {
+        case 1:            
+            GridSizeEnter(2);
+            this->grid_size_mode = 2;
+            setBlinker();
+            break;
+        case 2:         
+            GridSizeEnter(2);
+            this->grid_size_mode = 2;
+            setGlider();
+            break;
+        case 3:
+            GridSizeEnter(4);
+            this->grid_size_mode = 4;
+            setMWSS();
+            break;
+        case 4:
+            GridSizeEnter(4);
+            this->grid_size_mode = 4;            
+            setPenta();
+            break;
+        case 5:            
+            GridSizeEnter(5);
+            this->grid_size_mode = 5;
+            setPulsar();
+            break;
         }
-    } 
-    initial_live_cells.clear();
-    InitialGame();
-    for (int i = 0; i < grid->GetNumberCols(); i++) {
-        for (int j = 0; j < grid->GetNumberRows(); j++) {
-            this->grid->SetCellBackgroundColour(j, i, this->backgroundColour);
-        }
+        validateGame();
+        updateBtn();
     }
 }
 
+// configure the grid with selected grid mode
+void LifeFrame::GridSizeEnter(int grid_size_mode)
+{
+    if (this->grid_size_mode != grid_size_mode) {
+        DeleteBtn();
+        switch (grid_size_mode) {
+        case 1:
+            this->rowNum = 5;
+            this->colNum = 5;
+            break;
+        case 2:
+            this->rowNum = 15;
+            this->colNum = 15;
+            break;
+        case 3:
+            this->rowNum = 30;
+            this->colNum = 30;
+            break;
+        case 4:
+            this->rowNum = 40;
+            this->colNum = 50;
+            if (!this->full_screen_mode)
+                this->SetClientSize(1000, 800);
+            break;
+        case 5:
+            this->rowNum = 50;
+            this->colNum = 70;
+            if (!this->full_screen_mode)
+                this->SetClientSize(1400, 1000);
+            break;
+        }
+
+        if (timer.IsRunning())
+            timer.Stop();
+
+        prev_state_grid_toBe_cleared.clear();
+        initial_live_cells.clear();
+        SetGrid();
+        InitialGame();
+        InitialBtn();
+    }
+}
+
+
+// set the grid (same grid object)
 void LifeFrame::SetGrid()
 {
     wxSize size = this->GetClientSize();
@@ -492,6 +495,7 @@ void LifeFrame::SetGrid()
     this->grid->SetGridLineColour(lineColour);
 }
 
+// set or update the colour
 void LifeFrame::SetColour()
 {
     if (this->day_night_mode) {
@@ -510,9 +514,10 @@ void LifeFrame::SetColour()
     }
 }
 
+// update the grid and cells (triggered by the timer)
 void LifeFrame::updateGrid()
 { 
-    vector<pair<int, int>> live_cells = this->game.get_live_cells();
+    vector<int_pair> live_cells = this->game.get_live_cells();
     for (int i = 0; i < prev_state_grid_toBe_cleared.size(); i++) {
         pair<int, int> prev_pos = prev_state_grid_toBe_cleared[i];
         if (trace_mode)
@@ -528,4 +533,152 @@ void LifeFrame::updateGrid()
         prev_state_grid_toBe_cleared.push_back(pos);
     }
     grid->ForceRefresh();
+}
+
+// update the cell buttons after game is set
+void LifeFrame::updateBtn() {
+    // set all button colour to default
+    for (int i = 0; i < rowNum; i++) {
+        for (int j = 0; j < colNum; j++) {
+            btn[i * colNum + j]->SetBackgroundColour(this->backgroundColour);
+        }
+    }
+    // set live buttons
+    for (int i = 0; i < initial_live_cells.size(); i++) {
+        int_pair pos = initial_live_cells[i];
+        btn[pos.first * colNum + pos.second]->SetBackgroundColour(this->cellColour);
+    }
+}
+
+// validate the game setting
+void LifeFrame::validateGame() {
+    initial_live_cells.clear();
+    this->initial_live_cells = this->game.get_live_cells();
+    updateGrid();
+}
+
+//clear the prev_state vector, initial live cells, set new games and reset the buttons and grid
+void LifeFrame::clearGame() {
+    prev_state_grid_toBe_cleared.clear();
+    initial_live_cells.clear();
+    InitialGame();
+    for (int i = 0; i < rowNum; i++) {
+        for (int j = 0; j < colNum; j++) {
+            btn[i * colNum + j]->SetBackgroundColour(this->backgroundColour);
+            this->grid->SetCellBackgroundColour(j, i, this->backgroundColour);
+        }
+    }
+}
+
+
+//-------------------------------------SET EXAMPLES---------------------------------------
+void LifeFrame::setBlinker() {
+    this->game.set_status(make_pair(7, 8), true);
+    this->game.set_status(make_pair(7, 6), true);
+    this->game.set_status(make_pair(7, 7), true);
+}
+
+void LifeFrame::setGlider() {
+    this->game.set_status(make_pair(0, 1), true);
+    this->game.set_status(make_pair(1, 2), true);
+    this->game.set_status(make_pair(2, 2), true);
+    this->game.set_status(make_pair(2, 1), true);
+    this->game.set_status(make_pair(2, 0), true);
+}
+
+void LifeFrame::setMWSS() {
+    this->game.set_status(make_pair(19, 0), true);
+    this->game.set_status(make_pair(21, 0), true);
+    this->game.set_status(make_pair(18, 1), true);
+    this->game.set_status(make_pair(18, 2), true);
+    this->game.set_status(make_pair(18, 3), true);
+    this->game.set_status(make_pair(22, 3), true);
+    this->game.set_status(make_pair(18, 4), true);
+    this->game.set_status(make_pair(18, 5), true);
+    this->game.set_status(make_pair(21, 5), true);
+    this->game.set_status(make_pair(18, 6), true);
+    this->game.set_status(make_pair(19, 6), true);
+    this->game.set_status(make_pair(20, 6), true);
+}
+
+void LifeFrame::setPenta() {
+    this->game.set_status(make_pair(17, 23), true);
+    this->game.set_status(make_pair(18, 23), true);
+    this->game.set_status(make_pair(19, 23), true);
+    this->game.set_status(make_pair(20, 23), true);
+    this->game.set_status(make_pair(21, 23), true);
+    this->game.set_status(make_pair(22, 23), true);
+    this->game.set_status(make_pair(16, 24), true);
+    this->game.set_status(make_pair(23, 24), true);
+    this->game.set_status(make_pair(15, 25), true);
+    this->game.set_status(make_pair(24, 25), true);
+    this->game.set_status(make_pair(16, 26), true);
+    this->game.set_status(make_pair(23, 26), true);
+    this->game.set_status(make_pair(17, 27), true);
+    this->game.set_status(make_pair(18, 27), true);
+    this->game.set_status(make_pair(19, 27), true);
+    this->game.set_status(make_pair(20, 27), true);
+    this->game.set_status(make_pair(21, 27), true);
+    this->game.set_status(make_pair(22, 27), true);
+}
+
+void LifeFrame::setPulsar() {
+    int Xmid = this->rowNum / 2;
+    int Ymid = this->colNum / 2;
+
+    //LEFT PART
+    this->game.set_status(make_pair(Xmid - 4, Ymid - 6), true);
+    this->game.set_status(make_pair(Xmid - 3, Ymid - 6), true);
+    this->game.set_status(make_pair(Xmid - 2, Ymid - 6), true);
+    this->game.set_status(make_pair(Xmid + 2, Ymid - 6), true);
+    this->game.set_status(make_pair(Xmid + 3, Ymid - 6), true);
+    this->game.set_status(make_pair(Xmid + 4, Ymid - 6), true);
+
+    this->game.set_status(make_pair(Xmid - 6, Ymid - 4), true);
+    this->game.set_status(make_pair(Xmid - 1, Ymid - 4), true);
+    this->game.set_status(make_pair(Xmid + 1, Ymid - 4), true);
+    this->game.set_status(make_pair(Xmid + 6, Ymid - 4), true);
+    this->game.set_status(make_pair(Xmid - 6, Ymid - 3), true);
+    this->game.set_status(make_pair(Xmid - 1, Ymid - 3), true);
+    this->game.set_status(make_pair(Xmid + 1, Ymid - 3), true);
+    this->game.set_status(make_pair(Xmid + 6, Ymid - 3), true);
+    this->game.set_status(make_pair(Xmid - 6, Ymid - 2), true);
+    this->game.set_status(make_pair(Xmid - 1, Ymid - 2), true);
+    this->game.set_status(make_pair(Xmid + 1, Ymid - 2), true);
+    this->game.set_status(make_pair(Xmid + 6, Ymid - 2), true);
+
+    this->game.set_status(make_pair(Xmid - 4, Ymid - 1), true);
+    this->game.set_status(make_pair(Xmid - 3, Ymid - 1), true);
+    this->game.set_status(make_pair(Xmid - 2, Ymid - 1), true);
+    this->game.set_status(make_pair(Xmid + 2, Ymid - 1), true);
+    this->game.set_status(make_pair(Xmid + 3, Ymid - 1), true);
+    this->game.set_status(make_pair(Xmid + 4, Ymid - 1), true);
+
+    //RIGHT PART
+    this->game.set_status(make_pair(Xmid - 4, Ymid + 6), true);
+    this->game.set_status(make_pair(Xmid - 3, Ymid + 6), true);
+    this->game.set_status(make_pair(Xmid - 2, Ymid + 6), true);
+    this->game.set_status(make_pair(Xmid + 2, Ymid + 6), true);
+    this->game.set_status(make_pair(Xmid + 3, Ymid + 6), true);
+    this->game.set_status(make_pair(Xmid + 4, Ymid + 6), true);
+
+    this->game.set_status(make_pair(Xmid - 6, Ymid + 4), true);
+    this->game.set_status(make_pair(Xmid - 1, Ymid + 4), true);
+    this->game.set_status(make_pair(Xmid + 1, Ymid + 4), true);
+    this->game.set_status(make_pair(Xmid + 6, Ymid + 4), true);
+    this->game.set_status(make_pair(Xmid - 6, Ymid + 3), true);
+    this->game.set_status(make_pair(Xmid - 1, Ymid + 3), true);
+    this->game.set_status(make_pair(Xmid + 1, Ymid + 3), true);
+    this->game.set_status(make_pair(Xmid + 6, Ymid + 3), true);
+    this->game.set_status(make_pair(Xmid - 6, Ymid + 2), true);
+    this->game.set_status(make_pair(Xmid - 1, Ymid + 2), true);
+    this->game.set_status(make_pair(Xmid + 1, Ymid + 2), true);
+    this->game.set_status(make_pair(Xmid + 6, Ymid + 2), true);
+
+    this->game.set_status(make_pair(Xmid - 4, Ymid + 1), true);
+    this->game.set_status(make_pair(Xmid - 3, Ymid + 1), true);
+    this->game.set_status(make_pair(Xmid - 2, Ymid + 1), true);
+    this->game.set_status(make_pair(Xmid + 2, Ymid + 1), true);
+    this->game.set_status(make_pair(Xmid + 3, Ymid + 1), true);
+    this->game.set_status(make_pair(Xmid + 4, Ymid + 1), true);
 }

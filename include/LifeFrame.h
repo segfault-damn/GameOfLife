@@ -32,28 +32,35 @@ private:
     void OnTraceMode(wxCommandEvent& event);
     void OnFullScreen(wxCommandEvent& event);
     void OnSpeed(wxCommandEvent& event);
-    void OnGridUS(wxCommandEvent& event);
-    void OnGridS(wxCommandEvent& event);
-    void OnGridM(wxCommandEvent& event);
-    void OnGridL(wxCommandEvent& event);
-    void OnGridUL(wxCommandEvent& event);
+    void OnGrid(wxCommandEvent& event);
     void OnCell(wxCommandEvent& event);    
     void OnButtonClicked(wxCommandEvent& event);
     void OnConfirm(wxCommandEvent& event);
     void OnClear(wxCommandEvent& event);
-    void GridSizeEnter();
+    void OnExample(wxCommandEvent& event);
+    void GridSizeEnter(int grid_sizer_mode);
     void SetGrid();
     void SetColour();
     void InitialGame();
     void InitialBtn();
     void DeleteBtn();
     void updateGrid();
+    void updateBtn();
+    void validateGame();
+    void clearGame();
+
+    void setBlinker();
+    void setGlider();
+    void setMWSS();
+    void setPenta();
+    void setPulsar();
 
     Game game;
-    wxGrid* grid;
+    wxGrid* grid = NULL;
+    wxButton** btn = NULL;
     wxTimer timer;
-    int colNum;
-    int rowNum;
+    int colNum = 15;
+    int rowNum = 15;
  
     wxColour backgroundColour;
     wxColour cellColour;
@@ -71,31 +78,31 @@ private:
     wxMenu* menuHelp;
 
     wxBoxSizer* grid_sizer;
-    wxGridSizer* button_grid_sizer;
+    wxGridSizer* button_grid_sizer = NULL;
     static const int ID_SetGrid = 1;
     static const int ID_Run = 2;
     static const int ID_Timer = 3;
+    
+    static const int ID_Restart = 10;
     static const int ID_Pause = 20;
     static const int ID_Resume = 30;
-    static const int ID_Restart = 10;
-    static const int ID_GridComboBox = 15;
-    static const int ID_ColourMode = 14;
-    static const int ID_TraceMode = 13;
+
     static const int ID_FullScreen = 12;
-    static const int ID_GRID_US = 40;
-    static const int ID_GRID_S = 41;
-    static const int ID_GRID_M = 42;
-    static const int ID_GRID_L = 43;
-    static const int ID_GRID_UL = 44;
+    static const int ID_TraceMode = 13;
+    static const int ID_ColourMode = 14;
+    static const int ID_GridComboBox = 15;
+    static const int ID_GRID = 40;
+
     static const int ID_SetGame = 50;
     static const int ID_GRID_BTN_CFM = 100;
     static const int ID_GRID_BTN_CLEAR = 101;
+
+    static const int ID_Example = 200;
     static const int ID_Speed = 500;
     vector<int_pair> prev_state_grid_toBe_cleared; 
     vector<int_pair> initial_live_cells;
-    wxButton ** btn;
 
-    wxString version = "1.1";
+    wxString version = "1.2";
 };
 
 #endif LIFE_FRAME_H
