@@ -20,11 +20,10 @@ namespace life_game {
 
 		void Game::set_status(int_pair pos, bool status);
 		void Game::set_status(map<int_pair, bool> & gamepad, int_pair pos, bool status);
-
+		bool Game::get_status(int_pair pos);
 		vector<int_pair> Game::get_live_cells();
 
 	private:
-		bool Game::get_status(int_pair pos);
 		map<int_pair, bool> gamepad;
 		vector<int_pair> live_cells;
 		int gameWidth;

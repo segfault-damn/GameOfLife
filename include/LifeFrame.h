@@ -25,21 +25,29 @@ private:
     void OnRun(wxCommandEvent& event); 
     void OnPause(wxCommandEvent& event);
     void OnRestart(wxCommandEvent& event);
-    void OnGrid(wxCommandEvent& event);
-    void OnGridEnter(wxCommandEvent& event);
     void OnTimer(wxTimerEvent& event);
     void OnSize(wxSizeEvent& event);
     void OnColourMode(wxCommandEvent& event);
     void OnTraceMode(wxCommandEvent& event);
+    void OnFullScreen(wxCommandEvent& event);
+    void OnGridUS(wxCommandEvent& event);
+    void OnGridS(wxCommandEvent& event);
+    void OnGridM(wxCommandEvent& event);
+    void OnGridL(wxCommandEvent& event);
+    void OnGridUL(wxCommandEvent& event);
+    void OnCell(wxCommandEvent& event);    
+    void OnButtonClicked(wxCommandEvent& event);
+    void OnConfirm(wxCommandEvent& event);
+    void GridSizeEnter();
     void SetGrid();
     void SetColour();
     void InitialGame();
-    void InitialGridComboBox();
-    void updateGrid(vector<pair<int, int>> live_cells);
+    void InitialBtn();
+    void DeleteBtn();
+    void updateGrid();
 
     Game game;
     wxGrid* grid;
-    wxComboBox* gridComboBox;
     wxTimer timer;
     int colNum;
     int rowNum;
@@ -50,6 +58,11 @@ private:
     wxColour lineColour;
     bool trace_mode;
     bool day_night_mode;
+    bool full_screen_mode;
+    int grid_size_mode;
+    wxMenuBar* menuBar;
+    wxBoxSizer* grid_sizer;
+    wxGridSizer* button_grid_sizer;
     static const int ID_SetGrid = 1;
     static const int ID_Hello = 2;
     static const int ID_Run = 30;
@@ -59,8 +72,17 @@ private:
     static const int ID_GridComboBox = 15;
     static const int ID_ColourMode = 14;
     static const int ID_TraceMode = 13;
-    vector<int_pair> prev_state_grid_toBe_cleared;
-
+    static const int ID_FullScreen = 12;
+    static const int ID_GRID_US = 40;
+    static const int ID_GRID_S = 41;
+    static const int ID_GRID_M = 42;
+    static const int ID_GRID_L = 43;
+    static const int ID_GRID_UL = 44;
+    static const int ID_SetGame = 50;
+    static const int ID_GRID_BTN_CFM = 100;
+    vector<int_pair> prev_state_grid_toBe_cleared; 
+    vector<int_pair> initial_live_cells;
+    wxButton ** btn;
 };
 
 #endif LIFE_FRAME_H

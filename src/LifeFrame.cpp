@@ -1,42 +1,50 @@
 #include "LifeFrame.h"
 
-
-
 wxBEGIN_EVENT_TABLE(LifeFrame, wxFrame)
     EVT_TIMER(ID_Timer, LifeFrame::OnTimer)
-    EVT_COMBOBOX(ID_GridComboBox, LifeFrame::OnGridEnter)
     EVT_CLOSE(LifeFrame::OnClose)
 wxEND_EVENT_TABLE()
 
 LifeFrame::LifeFrame() : wxFrame(NULL, wxID_ANY, "Game of Life", wxPoint(10,10), wxSize(600,600)) , game(1,1), timer(this, ID_Timer)
 {
-    SetMinSize(wxSize(350, 200));
+    wxMenu* menuGrid = new wxMenu;
+    menuGrid->Append(ID_GRID_US, "Ultra Small (5x5)");
+    menuGrid->Append(ID_GRID_S, "Small (15x15)");
+    menuGrid->Append(ID_GRID_M, "Medium (30x30)");
+    menuGrid->Append(ID_GRID_L, "Large (50x40)");
+    menuGrid->Append(ID_GRID_UL, "Ultra Large (70x50)");
     wxMenu* menuConfig = new wxMenu;
-    menuConfig->Append(ID_SetGrid, "&Grid...\tCtrl-G",
+    menuConfig->AppendSubMenu(menuGrid, "&Grid",
         "Set world size");
-    menuConfig->Append(ID_ColourMode, "&Night Mode",
+    menuConfig->Append(ID_SetGame, "&Cell",
+        "Choose live cells to start!");
+    menuConfig->AppendSeparator();
+    menuConfig->AppendCheckItem(ID_ColourMode, "&Night Mode",
         "Toggle Day/Night Mode");
-    menuConfig->Append(ID_TraceMode, "&Trace Mode",
+    menuConfig->AppendCheckItem(ID_TraceMode, "&Trace Mode",
         "Toggle Trace Mode");
+    menuConfig->AppendCheckItem(ID_FullScreen, "&Full Screen",
+        "Toggle Full Screen");
 
     wxMenu* menuFile = new wxMenu;
     menuFile->Append(ID_Hello, "&Hello...\tCtrl-H",
         "Help string shown in status bar for this menu item");
-    menuFile->AppendSeparator();
-    menuFile->Append(wxID_EXIT);
+   
 
     wxMenu* menuRun = new wxMenu;
-    menuRun->Append(ID_Run, "&Run...\tCtrl-R",
+    menuRun->Append(ID_Run, "&Run\tCtrl-R",
         "Start the game!");
-    menuRun->Append(ID_Pause, "&Pause...\tCtrl-P",
+    menuRun->Append(ID_Pause, "&Pause\tCtrl-P",
         "Pause the game!");
     menuRun->Append(ID_Restart, "&Restart",
         "Restart the game!");
+    menuRun->AppendSeparator();
+    menuRun->Append(wxID_EXIT);
 
     wxMenu* menuHelp = new wxMenu;
     menuHelp->Append(wxID_ABOUT);
 
-    wxMenuBar* menuBar = new wxMenuBar;
+    menuBar = new wxMenuBar;
     menuBar->Append(menuRun, "&Game");
     menuBar->Append(menuConfig, "&Config");
     menuBar->Append(menuFile, "&File");
@@ -47,11 +55,16 @@ LifeFrame::LifeFrame() : wxFrame(NULL, wxID_ANY, "Game of Life", wxPoint(10,10),
     SetStatusText("Thanks to Conway!");
 
 
-    this->rowNum = 10;
-    this->colNum = 10;
+    this->rowNum = 15;
+    this->colNum = 15;
     this->grid = NULL;
+    this->btn = NULL;
+    this->grid_sizer = new wxBoxSizer(wxVERTICAL);
+    this->button_grid_sizer = NULL;
     this->trace_mode = 0;
     this->day_night_mode = 1;
+    this->full_screen_mode = 0;
+    this->grid_size_mode = 2;
 
     // ------------- Content -------------------------
     // Create a wxGrid object   
@@ -59,44 +72,76 @@ LifeFrame::LifeFrame() : wxFrame(NULL, wxID_ANY, "Game of Life", wxPoint(10,10),
     SetColour();
     SetGrid();
     InitialGame();
-    InitialGridComboBox();
+    InitialBtn();
     
     Bind(wxEVT_MENU, &LifeFrame::OnHello, this, ID_Hello);
     Bind(wxEVT_MENU, &LifeFrame::OnAbout, this, wxID_ABOUT);
     Bind(wxEVT_MENU, &LifeFrame::OnExit, this, wxID_EXIT);
-    Bind(wxEVT_MENU, &LifeFrame::OnGrid, this, ID_SetGrid);
     Bind(wxEVT_MENU, &LifeFrame::OnRun, this, ID_Run);
     Bind(wxEVT_MENU, &LifeFrame::OnPause, this, ID_Pause);
     Bind(wxEVT_MENU, &LifeFrame::OnRestart, this, ID_Restart);
     Bind(wxEVT_MENU, &LifeFrame::OnColourMode, this, ID_ColourMode);
     Bind(wxEVT_MENU, &LifeFrame::OnTraceMode, this, ID_TraceMode);
+    Bind(wxEVT_MENU, &LifeFrame::OnFullScreen, this, ID_FullScreen);
+    Bind(wxEVT_MENU, &LifeFrame::OnGridUS, this, ID_GRID_US);
+    Bind(wxEVT_MENU, &LifeFrame::OnGridS, this, ID_GRID_S);
+    Bind(wxEVT_MENU, &LifeFrame::OnGridM, this, ID_GRID_M);
+    Bind(wxEVT_MENU, &LifeFrame::OnGridL, this, ID_GRID_L);
+    Bind(wxEVT_MENU, &LifeFrame::OnGridUL, this, ID_GRID_UL);
+    Bind(wxEVT_MENU, &LifeFrame::OnCell, this, ID_SetGame);
 }
 
 LifeFrame::~LifeFrame() {
+    if (this->GetSizer() == this->grid_sizer) {
+        if (button_grid_sizer != NULL)
+            delete this->button_grid_sizer;
+    }
+    else if (this->GetSizer() == this->button_grid_sizer) {
+        if (grid_sizer != NULL)
+            delete this->grid_sizer;
+    }
     this->prev_state_grid_toBe_cleared.clear();
     delete this->grid;
-    if (this->gridComboBox != NULL) 
-        delete this->gridComboBox;
+    DeleteBtn();
 }
 
 void LifeFrame::InitialGame() {
     Game game = Game(rowNum, colNum);
     this->game = game;
-    this->game.set_status(make_pair(5, 5), true);
-    this->game.set_status(make_pair(6, 6), true);
-    this->game.set_status(make_pair(7, 6), true);
-    this->game.set_status(make_pair(7, 5), true);
-    this->game.set_status(make_pair(7, 4), true);
+    for (int i = 0; i < this->initial_live_cells.size(); i++) {
+        int_pair pos = initial_live_cells[i];
+        this->game.set_status(pos, true);
+    }
+ //   this->game.set_status(make_pair(5, 5), true);
+ //   this->game.set_status(make_pair(6, 6), true);
+ //   this->game.set_status(make_pair(7, 6), true);
+  //  this->game.set_status(make_pair(7, 5), true);
+  //  this->game.set_status(make_pair(7, 4), true);
 
-    vector<pair<int, int>> live_cells = this->game.get_live_cells();
-    updateGrid(live_cells);
+    updateGrid();
 }
 
-void LifeFrame::InitialGridComboBox() {
-    static const wxString choiceArray[5] =
-    { "Ultra Small (5x5)", "Small (15x15)", "Middle (30x30)", "Large (70x50)", "Ultra Large (120x70)" };
-    this->gridComboBox = new wxComboBox(this, ID_GridComboBox, "", wxPoint(30, 30), wxSize(100, 100), 5, choiceArray);
-    this->gridComboBox->Hide();
+void LifeFrame::InitialBtn() {
+    btn = new wxButton*[rowNum * colNum];
+    for (int i = 0; i < rowNum; i++) {
+        for (int j = 0; j < colNum; j++) {
+            btn[i * colNum + j] = new wxButton(this, 1000 + (i * colNum + j));
+            btn[i * colNum + j]->Bind(wxEVT_COMMAND_BUTTON_CLICKED, &LifeFrame::OnButtonClicked, this);
+            btn[i * colNum + j]->SetBackgroundColour(this->backgroundColour);
+            btn[i * colNum + j]->Hide();
+        }
+    }
+    Layout();
+}
+
+void LifeFrame::DeleteBtn() {
+    for (int i = 0; i < rowNum; i++) {
+        for (int j = 0; j < colNum; j++) {
+            delete this->btn[i * colNum + j];
+        }
+    }
+    delete [] this->btn;
+    this->btn = NULL;
 }
 
 void LifeFrame::OnExit(wxCommandEvent& event)
@@ -105,6 +150,22 @@ void LifeFrame::OnExit(wxCommandEvent& event)
         timer.Stop();
     Close(true);
 }
+void LifeFrame::OnButtonClicked(wxCommandEvent& event)
+{
+    
+    int x = (event.GetId() - 1000) / (this->colNum);
+    int y = (event.GetId() - 1000) % (this->colNum);
+    wxButton* btn = (wxButton *) event.GetEventObject();
+    if (this->game.get_status(make_pair(x, y))) {
+        this->game.set_status(make_pair(x, y), false); 
+        btn->SetBackgroundColour(this->backgroundColour);
+    }
+    else {
+        this->game.set_status(make_pair(x, y), true);
+        btn->SetBackgroundColour(this->cellColour);
+    }
+}
+
 
 void LifeFrame::OnClose(wxCloseEvent& event)
 {
@@ -123,67 +184,110 @@ void LifeFrame::OnHello(wxCommandEvent& event)
     wxLogMessage("Hello world from wxWidgets!");
 }
 
-
-void LifeFrame::OnGrid(wxCommandEvent& event)
-{
-    this->gridComboBox->Popup();
-}
-
 void LifeFrame::OnRun(wxCommandEvent& event)
 {
-    timer.Start(10);
+    timer.Start(50);
 }
 
-void LifeFrame::OnGridEnter(wxCommandEvent& event)
+void LifeFrame::OnGridUS(wxCommandEvent& event) {
+    if (this->grid_size_mode != 1) {
+        this->grid_size_mode = 1;
+        GridSizeEnter();
+    }
+}
+
+void LifeFrame::OnGridS(wxCommandEvent& event) {
+    if (this->grid_size_mode != 2) {
+        this->grid_size_mode = 2;
+        GridSizeEnter();
+    }
+}
+
+void LifeFrame::OnGridM(wxCommandEvent& event) {
+    if (this->grid_size_mode != 3) {
+        this->grid_size_mode = 3;
+        GridSizeEnter();
+    }
+}
+
+void LifeFrame::OnGridL(wxCommandEvent& event) {
+    if (this->grid_size_mode != 4) {
+        this->grid_size_mode = 4;
+        GridSizeEnter();
+    }
+}
+
+void LifeFrame::OnGridUL(wxCommandEvent& event) {
+    if (this->grid_size_mode != 5) {
+        this->grid_size_mode = 5;
+        GridSizeEnter();
+    }
+}
+
+void LifeFrame::GridSizeEnter()
 {
-    int comboValue = this->gridComboBox->GetSelection();
-    switch (comboValue) {
-        case 0:
+    DeleteBtn();
+    switch (this->grid_size_mode) {
+        case 1:
             this->rowNum = 5;
             this->colNum = 5;
             break;
-        case 1:
+        case 2:
             this->rowNum = 15;
             this->colNum = 15;
             break;
-        case 2:
+        case 3:
             this->rowNum = 30;
             this->colNum = 30;
             break;
-        case 3:
+        case 4:
+            this->rowNum = 40;
+            this->colNum = 50;
+            this->SetClientSize(1000, 800);
+            break;
+        case 5:
             this->rowNum = 50;
             this->colNum = 70;
             this->SetClientSize(1400, 1000);
-            break;
-        case 4:
-            this->rowNum = 70;
-            this->colNum = 120;
-         //   long styleflag = GetWindowStyle();
-          //  SetWindowStyle(styleflag | wxSTAY_ON_TOP);
-          //  this->ShowFullScreen(true, wxFULLSCREEN_NOCAPTION);
-            this->SetClientSize(2000,2000);
             break;
     }
     if(timer.IsRunning())
         timer.Stop();
     prev_state_grid_toBe_cleared.clear();
+    initial_live_cells.clear();
     SetGrid();
     InitialGame();
-    this->gridComboBox->Hide();   
+    InitialBtn();
 }
 
 void LifeFrame::OnColourMode(wxCommandEvent& event)
 {
-    if (this->day_night_mode) {
-        //Day->Night
-        this->day_night_mode = 0;
-    }
-    else {
-        //Night->Day
-        this->day_night_mode = 1;
-    }
+    this->day_night_mode = !this->day_night_mode;
     SetColour();
     SetGrid();
+    updateGrid();
+
+    // update btn colour
+    for (int i = 0; i < rowNum; i++) {
+        for (int j = 0; j < colNum; j++) {
+            btn[i * colNum + j]->SetBackgroundColour(this->backgroundColour);
+        }
+    }
+}
+
+void LifeFrame::OnFullScreen(wxCommandEvent& event)
+{
+    if (this->full_screen_mode) {
+       
+        this->ShowFullScreen(false, wxFULLSCREEN_NOCAPTION);
+    }
+    else {
+        long styleflag = GetWindowStyle();
+        SetWindowStyle(styleflag | wxSTAY_ON_TOP);
+
+        this->ShowFullScreen(true, wxFULLSCREEN_NOCAPTION);
+    }
+    this->full_screen_mode = !this->full_screen_mode;
 }
 
 void LifeFrame::OnTraceMode(wxCommandEvent& event)
@@ -223,10 +327,49 @@ void LifeFrame::OnSize(wxSizeEvent& event)
 void LifeFrame::OnTimer(wxTimerEvent& event)
 {
     game.update_game();
-    vector<pair<int, int>> live_cells = game.get_live_cells();
-    updateGrid(live_cells);
+    updateGrid();
 }
 
+void LifeFrame::OnCell(wxCommandEvent& event)
+{
+    if (timer.IsRunning()) {
+        wxMessageBox("The program is currently running. Click 'Restart' to reset the game!",
+            "Error", wxOK | wxICON_INFORMATION);
+    }
+    else {
+        this->grid->Hide();
+        this->button_grid_sizer = new wxGridSizer(rowNum, colNum, 0, 0);
+        for (int i = 0; i < rowNum; i++) {
+            for (int j = 0; j < colNum; j++) {
+                btn[i * colNum + j]->Show();
+                this->button_grid_sizer->Add(btn[i * colNum + j], 1, wxEXPAND | wxALL);
+            }
+        }
+        this->SetSizer(this->button_grid_sizer, false);
+        Layout();
+        wxMenu* menuConfirm = new wxMenu;
+        menuConfirm->Append(ID_GRID_BTN_CFM, "Confirm");
+        menuBar->Append(menuConfirm, "Finish");
+        Bind(wxEVT_MENU, &LifeFrame::OnConfirm, this, ID_GRID_BTN_CFM);
+        InitialGame();
+    }
+}
+
+void LifeFrame::OnConfirm(wxCommandEvent& event)
+{
+    this->initial_live_cells = this->game.get_live_cells();
+    menuBar->Remove(4);
+    for (int i = 0; i < rowNum; i++) {
+        for (int j = 0; j < colNum; j++) {
+            btn[i * colNum + j]->Hide();
+        }
+    }
+    this->grid->Show();
+    this->SetSizer(this->grid_sizer, true);
+    button_grid_sizer = NULL;
+    updateGrid();
+    Layout();
+}
 
 void LifeFrame::SetGrid()
 {
@@ -241,11 +384,10 @@ void LifeFrame::SetGrid()
     this->grid->HideColLabels();
     this->grid->HideRowLabels();
 
-    wxBoxSizer* sizer = new wxBoxSizer(wxVERTICAL);
-    sizer->Add(this->grid, 1, wxEXPAND, 0);
-    SetSizer(sizer);
-    sizer->Fit(this);
-
+    this->grid_sizer->Clear();
+    this->grid_sizer->Add(this->grid, 1, wxEXPAND, 0);
+    this->SetSizer(this->grid_sizer, false); 
+    this->grid_sizer->Fit(this);
     for (int i = 0; i < grid->GetNumberCols(); i++) {
         for (int j = 0; j < grid->GetNumberRows(); j++) {
             this->grid->SetReadOnly(j, i);
@@ -279,13 +421,14 @@ void LifeFrame::SetColour()
     else {
         this->backgroundColour = wxColour(0, 15, 9);
         this->cellColour = wxColour(223, 242, 233);
-        this->traceColour = wxColour(138, 158, 148);
+        this->traceColour = wxColour(42, 46, 44);
         this->lineColour = wxColour(77, 79, 78);
     }
 }
 
-void LifeFrame::updateGrid(vector<pair<int, int>> live_cells)
+void LifeFrame::updateGrid()
 { 
+    vector<pair<int, int>> live_cells = this->game.get_live_cells();
     for (int i = 0; i < prev_state_grid_toBe_cleared.size(); i++) {
         pair<int, int> prev_pos = prev_state_grid_toBe_cleared[i];
         if (trace_mode)
