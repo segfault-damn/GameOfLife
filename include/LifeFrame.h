@@ -19,6 +19,8 @@ public:
     ~LifeFrame();
     wxDECLARE_EVENT_TABLE();
 private:
+    void initialMenu();
+    void BindEvts();
     void OnExit(wxCommandEvent& event);
     void OnClose(wxCloseEvent& event);
     void OnAbout(wxCommandEvent& event);

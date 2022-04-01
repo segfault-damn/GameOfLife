@@ -10,6 +10,36 @@ LifeFrame::LifeFrame() : wxFrame(NULL, wxID_ANY, "Game of Life", wxPoint(10,10),
     wxIcon* icon = new wxIcon(iconbitmap);
     this->SetIcon(*icon);
 
+    this->SetColour();
+    this->SetBackgroundColour(this->btnBackColour);
+    CreateStatusBar();
+    SetStatusText("Thanks to Conway!");
+    // initialize grid sizer
+    this->grid_sizer = new wxBoxSizer(wxVERTICAL);
+
+    initialMenu();
+    SetGrid();
+    InitialGame();
+    InitialBtn();
+    BindEvts();
+}
+
+LifeFrame::~LifeFrame() {
+    if (this->GetSizer() == this->grid_sizer) {
+        if (button_grid_sizer != NULL)
+            delete this->button_grid_sizer;
+    }
+    else if (this->GetSizer() == this->button_grid_sizer) {
+        if (grid_sizer != NULL)
+            delete this->grid_sizer;
+    }
+    this->prev_state_grid_toBe_cleared.clear();
+    delete this->grid;
+    DeleteBtn();
+}
+
+// bind ids with event functions
+void LifeFrame::initialMenu() {
     wxMenu* menuGrid = new wxMenu;
     menuGrid->Append(ID_GRID + 1, "Ultra Small (5x5)");
     menuGrid->Append(ID_GRID + 2, "Small (15x15)");
@@ -30,7 +60,7 @@ LifeFrame::LifeFrame() : wxFrame(NULL, wxID_ANY, "Game of Life", wxPoint(10,10),
         "Set world size...");
     menuConfig->Append(ID_SetGame, "&Cell",
         "Choose live cells to start...");
-    menuConfig->AppendSubMenu(menuSpeed , "&Refresh Rate",
+    menuConfig->AppendSubMenu(menuSpeed, "&Refresh Rate",
         "Choose the speed of the game...");
     menuConfig->AppendSeparator();
     menuConfig->AppendCheckItem(ID_ColourMode, "&Night Mode",
@@ -38,7 +68,7 @@ LifeFrame::LifeFrame() : wxFrame(NULL, wxID_ANY, "Game of Life", wxPoint(10,10),
     menuConfig->AppendCheckItem(ID_TraceMode, "&Trace Mode",
         "Toggle Trace Mode");
     menuConfig->AppendCheckItem(ID_FullScreen, "&Full Screen",
-        "Toggle Full Screen");   
+        "Toggle Full Screen");
 
     wxMenu* menuExample = new wxMenu;
     menuExample->Append(ID_Example + 1, "Blinker (15x15)");
@@ -68,19 +98,10 @@ LifeFrame::LifeFrame() : wxFrame(NULL, wxID_ANY, "Game of Life", wxPoint(10,10),
     menuBar->Append(menuConfig, "&Config");
     menuBar->Append(menuHelp, "&Help");
     SetMenuBar(menuBar);
-    this->SetColour();
-    this->SetBackgroundColour(this->btnBackColour);
-    CreateStatusBar();
-    SetStatusText("Thanks to Conway!");
+}
 
-    this->grid_sizer = new wxBoxSizer(wxVERTICAL);
-
-    // ------------- Content -------------------------
-    // Create a wxGrid object   
-    SetGrid();
-    InitialGame();
-    InitialBtn();
-    
+// bind ids with event functions
+void LifeFrame::BindEvts() {
     Bind(wxEVT_MENU, &LifeFrame::OnAbout, this, wxID_ABOUT);
     Bind(wxEVT_MENU, &LifeFrame::OnExit, this, wxID_EXIT);
     Bind(wxEVT_MENU, &LifeFrame::OnRun, this, ID_Run);
@@ -95,20 +116,6 @@ LifeFrame::LifeFrame() : wxFrame(NULL, wxID_ANY, "Game of Life", wxPoint(10,10),
         Bind(wxEVT_MENU, &LifeFrame::OnExample, this, ID_Example + i);
         Bind(wxEVT_MENU, &LifeFrame::OnGrid, this, ID_GRID + i);
     }
-}
-
-LifeFrame::~LifeFrame() {
-    if (this->GetSizer() == this->grid_sizer) {
-        if (button_grid_sizer != NULL)
-            delete this->button_grid_sizer;
-    }
-    else if (this->GetSizer() == this->button_grid_sizer) {
-        if (grid_sizer != NULL)
-            delete this->grid_sizer;
-    }
-    this->prev_state_grid_toBe_cleared.clear();
-    delete this->grid;
-    DeleteBtn();
 }
 
 // set the game with given cells in the initiali_live_cells
